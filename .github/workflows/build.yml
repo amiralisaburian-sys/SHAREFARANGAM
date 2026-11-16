@@ -21,6 +21,17 @@ jobs:
           cp index.html manifest.json sw.js icon-*.png www/
       - run: npm install
       - run: npx cap add android
+      - name: Set app icon
+        run: |
+          R=android/app/src/main/res
+          for d in "mdpi 48 108" "hdpi 72 162" "xhdpi 96 216" "xxhdpi 144 324" "xxxhdpi 192 432"; do
+            set -- $d
+            convert icon-512.png -resize ${2}x${2} $R/mipmap-$1/ic_launcher.png
+            convert icon-512.png -resize ${2}x${2} $R/mipmap-$1/ic_launcher_round.png
+            INNER=$(( $3 * 75 / 100 ))
+            convert icon-512-maskable.png -resize ${INNER}x${INNER} -background '#0B0A08' -gravity center -extent ${3}x${3} $R/mipmap-$1/ic_launcher_foreground.png
+          done
+          printf '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n<color name="ic_launcher_background">#0B0A08</color>\n</resources>\n' > $R/values/ic_launcher_background.xml
       - run: npx cap sync android
       - name: Build debug APK
         run: cd android && chmod +x gradlew && ./gradlew assembleDebug
