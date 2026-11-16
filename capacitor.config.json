@@ -1,0 +1,6 @@
+{
+  "appId": "com.shahrefarangam.shop",
+  "appName": "شهر فرنگم",
+  "webDir": "www",
+  "android": { "backgroundColor": "#0b0a08" }
+}
