@@ -3,6 +3,8 @@ on:
   workflow_dispatch:
   push:
     branches: [main, master]
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -38,7 +40,15 @@ jobs:
       - run: npx cap sync android
       - name: Build debug APK
         run: cd android && chmod +x gradlew && ./gradlew assembleDebug
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk ShahreFarangam.apk
       - uses: actions/upload-artifact@v4
         with:
           name: ShahreFarangam-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: ShahreFarangam.apk
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: شهر فرنگم v${{ github.run_number }}
+          files: ShahreFarangam.apk
