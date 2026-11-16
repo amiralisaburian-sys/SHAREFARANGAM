@@ -37,11 +37,31 @@ jobs:
             $IM icon-512-maskable.png -resize ${INNER}x${INNER} -background '#0B0A08' -gravity center -extent ${3}x${3} $R/mipmap-$1/ic_launcher_foreground.png
           done
           printf '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n<color name="ic_launcher_background">#0B0A08</color>\n</resources>\n' > $R/values/ic_launcher_background.xml
+      - name: Set version
+        run: |
+          sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/" android/app/build.gradle
+          sed -i "s/versionName \"1.0\"/versionName \"1.${{ github.run_number }}\"/" android/app/build.gradle
       - run: npx cap sync android
-      - name: Build debug APK
-        run: cd android && chmod +x gradlew && ./gradlew assembleDebug
-      - name: Rename APK
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk ShahreFarangam.apk
+      - name: Build signed APK
+        env:
+          KS_B64: ${{ secrets.KEYSTORE_BASE64 }}
+          KS_PW: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          cd android
+          chmod +x gradlew
+          if [ -n "$KS_B64" ] && [ -n "$KS_PW" ]; then
+            echo "$KS_B64" | base64 -d > "$GITHUB_WORKSPACE/release.keystore"
+            ./gradlew assembleRelease \
+              -Pandroid.injected.signing.store.file="$GITHUB_WORKSPACE/release.keystore" \
+              -Pandroid.injected.signing.store.password="$KS_PW" \
+              -Pandroid.injected.signing.key.alias=shahrefarangam \
+              -Pandroid.injected.signing.key.password="$KS_PW"
+            cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/ShahreFarangam.apk"
+          else
+            echo "No signing secrets found, building debug APK"
+            ./gradlew assembleDebug
+            cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/ShahreFarangam.apk"
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: ShahreFarangam-APK
