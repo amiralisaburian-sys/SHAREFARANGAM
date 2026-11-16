@@ -15,6 +15,8 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+      - name: Install ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
       - name: Prepare web files
         run: |
           mkdir -p www
@@ -24,12 +26,13 @@ jobs:
       - name: Set app icon
         run: |
           R=android/app/src/main/res
+          IM=$(command -v magick || command -v convert)
           for d in "mdpi 48 108" "hdpi 72 162" "xhdpi 96 216" "xxhdpi 144 324" "xxxhdpi 192 432"; do
             set -- $d
-            convert icon-512.png -resize ${2}x${2} $R/mipmap-$1/ic_launcher.png
-            convert icon-512.png -resize ${2}x${2} $R/mipmap-$1/ic_launcher_round.png
+            $IM icon-512.png -resize ${2}x${2} $R/mipmap-$1/ic_launcher.png
+            $IM icon-512.png -resize ${2}x${2} $R/mipmap-$1/ic_launcher_round.png
             INNER=$(( $3 * 75 / 100 ))
-            convert icon-512-maskable.png -resize ${INNER}x${INNER} -background '#0B0A08' -gravity center -extent ${3}x${3} $R/mipmap-$1/ic_launcher_foreground.png
+            $IM icon-512-maskable.png -resize ${INNER}x${INNER} -background '#0B0A08' -gravity center -extent ${3}x${3} $R/mipmap-$1/ic_launcher_foreground.png
           done
           printf '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n<color name="ic_launcher_background">#0B0A08</color>\n</resources>\n' > $R/values/ic_launcher_background.xml
       - run: npx cap sync android
